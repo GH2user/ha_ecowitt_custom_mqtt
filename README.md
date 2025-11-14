@@ -1,4 +1,6 @@
+![gateway-icons-L](https://github.com/user-attachments/assets/5b232f4d-4626-4bc1-bda8-f7bcb15c5bd2)
 # ha_ecowitt_custom_mqtt
+
 Home-Assistant files to use the custom MQTT server from Ecowitt
 
 
@@ -17,7 +19,8 @@ Supported Devices:
 
 It should be possible to use WH30 for all Temperature sensors and WH31 for all Temp/Hum sensors. The GW3000 gateway should also work as it generates the same MQTT-output according Ecowitt-discord.
 
-Please refer to the wiki for more details on installation and usage.
+>[!TIP]
+>**Please refer to the [wiki](https://github.com/GH2user/ha_ecowitt_custom_mqtt/wiki) for more details on installation and usage.**
 
 
 At the MQTT integration page it will look like below image.
@@ -37,7 +40,7 @@ At the MQTT integration page it will look like below image.
 
 + Suggest to start getting the Gateway working before adding the devices
 
-+ Refer to the wiki documents for installation guide and usage
++ Refer to the [wiki](https://github.com/GH2user/ha_ecowitt_custom_mqtt/wiki) documents for installation guide and usage
 
 
 
