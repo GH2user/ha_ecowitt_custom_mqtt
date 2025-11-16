@@ -1,0 +1,4 @@
+This folder contains the actual code to create the sensors in Home Assistant.  
+It is split into two separate folders again to accomodate the use of the standard MDI-icons and my own EWI-icons.
+The latter can be downloaded from my repository;  
+ha-ecowitt-icons
