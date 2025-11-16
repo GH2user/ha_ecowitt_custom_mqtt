@@ -1,0 +1,311 @@
+# PACKAGES
+# ECOWITT_MQTT
+# Device: GW2000A Gateway
+#
+# 2025-10-23 initial
+# 2025-10-25 seperate devices, icons, added WH40, WH57, WH31
+# 2025-10-26 split seperate files, added WH30, WH51
+# 2025-10-27 added 'configuration_url', 'suggested_display_precision', generalised state_topic
+# 2025-10-28 fancy uptime and raw data time
+# 2025-10-30 proper icons, fancify station model
+# 2025-11-14 split gw2000 and gw3000
+# 2025-11-16 added remarks, text headers, mdi-icon version
+
+# Please refer to the documentation at https://github.com/GH2user/ha_ecowitt_custom_mqtt
+
+
+# ----------------------------- WORK TO DO BEFORE ADDING IT TO HOME-ASSISTANT
+# The device declaration needs to be with the first sensor added !
+#
+# lines 56 - 62 approximately
+# device:
+#   identifiers: "ecowitt_gateway2"
+#   name: "Ecowitt"
+#   model: "GW2000A Gateway"
+#   manufacturer: "Ecowitt"
+#   sw_version: "see sensors"
+#   configuration_url: "http://192.168.178.36/" ------- CHANGE this to your Gateway IP-address or remove the full line
+#                                                       it allows a direct link to your Gateway's webserver settings 
+#                                                       from your MQTT device page in Home Assistant
+
+
+#
+#-------------- GW2000A Gateway
+#-- Based on GW2000A firmward 3.2.5, 3.2.6
+#-- All devices are handled by the Gateway but this exposes the Gateway only
+#-- Sensors: indoor temperature/indoor humidity/barometric pressure
+#-- Calculated: indoor dewpoint
+#-- Diagnostics: raw mqtt-data, many sensors
+#
+
+
+mqtt:
+    sensor:
+#---DIAGNOSTIC
+      # Raw Data
+      - name: "GW Raw Data"
+        unique_id: "ecowittpws_gw2_raw_data"
+        state_topic: "ecowitt/devices"
+        icon: ewi:gw2-rawdata
+        value_template: >-
+          {% set ns = namespace(data={}) %}
+          {% for item in value | string | regex_findall('([^&=]+)=([^&]*)') %}
+            {% set ns.data = ns.data | combine({item[0]: item[1]}) %}
+          {% endfor %}
+          {{ ns.data.dateutc | replace("%20", " ") | replace("%3A", ":") | default('unknown') }}
+        device:
+          identifiers: "ecowitt_gateway2"
+          name: "Ecowitt"
+          model: "GW2000A Gateway"
+          manufacturer: "Ecowitt"
+          sw_version: "see sensors"
+          configuration_url: "http://192.168.178.36/"
+        entity_category: diagnostic
+
+      # Runtime (uptime)
+      - name: "GW Runtime"
+        unique_id: "ecowittpws_gw2_runtime"
+        state_topic: "ecowitt/devices"
+        icon: ewi:gw2-runtime
+        value_template: >-
+          {% set ns = namespace(data={}) %}
+          {% for item in value | string | regex_findall('([^&=]+)=([^&]*)') %}
+            {% set ns.data = ns.data | combine({item[0]: item[1]}) %}
+          {% endfor %}
+          {% set start = as_timestamp(now() - timedelta( seconds = (ns.data.runtime | float ))) %}
+          {{ start | timestamp_custom( '%Y-%m-%d %H:%M:%S' ) | default('unknown') }}
+        device:
+          identifiers: "ecowitt_gateway2"
+        entity_category: diagnostic
+
+      # Heap Memory
+      - name: "GW Heap Memory"
+        unique_id: "ecowittpws_gw2_heap_memory"
+        state_topic: "ecowitt/devices"
+        unit_of_measurement: "bytes"
+        suggested_display_precision: 0
+        icon: ewi:gw2-heapmemory
+        state_class: "measurement"
+        value_template: >-
+          {% set ns = namespace(data={}) %}
+          {% for item in value | string | regex_findall('([^&=]+)=([^&]*)') %}
+            {% set ns.data = ns.data | combine({item[0]: item[1]}) %}
+          {% endfor %}
+          {{ ns.data.heap | default(0) | int }}
+        device:
+          identifiers: "ecowitt_gateway2"
+        entity_category: diagnostic
+
+      # DNS Error Count
+      - name: "GW DNS Error Count"
+        unique_id: "ecowittpws_gw2_dns_error_count"
+        state_topic: "ecowitt/devices"
+        icon: ewi:gw2-dnserror
+        state_class: "total_increasing"
+        value_template: >-
+          {% set ns = namespace(data={}) %}
+          {% for item in value | string | regex_findall('([^&=]+)=([^&]*)') %}
+            {% set ns.data = ns.data | combine({item[0]: item[1]}) %}
+          {% endfor %}
+          {{ ns.data.dns_err_cnt | default(0) | int }}
+        device:
+          identifiers: "ecowitt_gateway2"
+        entity_category: diagnostic
+
+      # Station Type (as a text sensor, mqtt is showing "model_firmware")
+      - name: "GW Firmware"
+        unique_id: "ecowittpws_gw2_station_type"
+        state_topic: "ecowitt/devices"
+        icon: ewi:gw2-stationtype
+        value_template: >-
+          {% set ns = namespace(data={}) %}
+          {% for item in value | string | regex_findall('([^&=]+)=([^&]*)') %}
+            {% set ns.data = ns.data | combine({item[0]: item[1]}) %}
+          {% endfor %}
+          {{ ns.data.stationtype | replace('GW2000A_','') | default('unknown') }}
+        device:
+          identifiers: "ecowitt_gateway2"
+        entity_category: diagnostic
+
+      # Frequency (as a numeric sensor)
+      - name: "GW Frequency"
+        unique_id: "ecowittpws_gw2_frequency"
+        state_topic: "ecowitt/devices"
+        icon: ewi:gw2-frequency
+        unit_of_measurement: "MHz"
+        suggested_display_precision: 0
+        value_template: >-
+          {% set ns = namespace(data={}) %}
+          {% for item in value | string | regex_findall('([^&=]+)=([^&]*)') %}
+            {% set ns.data = ns.data | combine({item[0]: item[1]}) %}
+          {% endfor %}
+          {{ ns.data.freq | default('0M') | replace('M',' ') | float }}
+        device:
+          identifiers: "ecowitt_gateway2"
+        entity_category: diagnostic
+
+      # Model (as a text sensor)
+      - name: "GW Model"
+        unique_id: "ecowittpws_gw2_model"
+        state_topic: "ecowitt/devices"
+        icon: ewi:gw2000
+        value_template: >-
+          {% set ns = namespace(data={}) %}
+          {% for item in value | string | regex_findall('([^&=]+)=([^&]*)') %}
+            {% set ns.data = ns.data | combine({item[0]: item[1]}) %}
+          {% endfor %}
+          {{ ns.data.model | default('unknown') }}
+        device:
+          identifiers: "ecowitt_gateway2"
+        entity_category: diagnostic
+
+      # Interval (as a numeric sensor)
+      - name: "GW Interval"
+        unique_id: "ecowittpws_gw2_interval"
+        state_topic: "ecowitt/devices"
+        unit_of_measurement: "s"
+        suggested_display_precision: 0
+        icon: ewi:gw2-interval
+        state_class: "measurement"
+        value_template: >-
+          {% set ns = namespace(data={}) %}
+          {% for item in value | string | regex_findall('([^&=]+)=([^&]*)') %}
+            {% set ns.data = ns.data | combine({item[0]: item[1]}) %}
+          {% endfor %}
+          {{ ns.data.interval | default(0) | int }}
+        device:
+          identifiers: "ecowitt_gateway2"
+        entity_category: diagnostic
+
+      # New sensor: CDN Flag (cdnflg)
+      - name: "GW CDN flag"
+        unique_id: "ecowittpws_gw2_cdn_flag"
+        state_topic: "ecowitt/devices"
+        icon: ewi:gw2-cdnflag
+        state_class: "measurement"
+        value_template: >-
+          {% set ns = namespace(data={}) %}
+          {% for item in value | string | regex_findall('([^&=]+)=([^&]*)') %}
+            {% set ns.data = ns.data | combine({item[0]: item[1]}) %}
+          {% endfor %}
+          {{ ns.data.cdnflg | default(0) | int }}
+        device:
+          identifiers: "ecowitt_gateway2"
+        entity_category: diagnostic
+
+
+#---MEASUREMENTS
+      # Indoor Temperature
+      - name: "Indoor Temperature"
+        unique_id: "ecowittpws_gw2_indoor_temperature"
+        state_topic: "ecowitt/devices"
+        unit_of_measurement: "°C"
+        suggested_display_precision: 1
+        device_class: "temperature"
+        state_class: "measurement"
+        value_template: >-
+          {% set ns = namespace(data={}) %}
+          {% for item in value | string | regex_findall('([^&=]+)=([^&]*)') %}
+            {% set ns.data = ns.data | combine({item[0]: item[1]}) %}
+          {% endfor %}
+          {{ ((ns.data.tempinf | default(0.0) | float) - 32) * 5 / 9 | round(2) }}
+        device:
+          identifiers: "ecowitt_gateway2"
+
+      # Indoor Humidity
+      - name: "Indoor Humidity"
+        unique_id: "ecowittpws_gw2_indoor_humidity"
+        state_topic: "ecowitt/devices"
+        unit_of_measurement: "%"
+        suggested_display_precision: 0
+        device_class: "humidity"
+        state_class: "measurement"
+        value_template: >-
+          {% set ns = namespace(data={}) %}
+          {% for item in value | string | regex_findall('([^&=]+)=([^&]*)') %}
+            {% set ns.data = ns.data | combine({item[0]: item[1]}) %}
+          {% endfor %}
+          {{ ns.data.humidityin | default(0) | int }}
+        device:
+          identifiers: "ecowitt_gateway2"
+
+      # Relative Barometric Pressure
+      - name: "Relative Pressure"
+        unique_id: "ecowittpws_gw2_relative_pressure"
+        state_topic: "ecowitt/devices"
+        unit_of_measurement: "hPa"
+        suggested_display_precision: 0
+        icon: ewi:pressure-rel
+        device_class: "pressure"
+        state_class: "measurement"
+        value_template: >-
+          {% set ns = namespace(data={}) %}
+          {% for item in value | string | regex_findall('([^&=]+)=([^&]*)') %}
+            {% set ns.data = ns.data | combine({item[0]: item[1]}) %}
+          {% endfor %}
+          {{ (ns.data.baromrelin | default(0.0) | float * 33.86389) | round(2) }}
+        device:
+          identifiers: "ecowitt_gateway2"
+
+      # Absolute Barometric Pressure
+      - name: "Absolute Pressure"
+        unique_id: "ecowittpws_gw2_absolute_pressure"
+        state_topic: "ecowitt/devices"
+        unit_of_measurement: "hPa"
+        suggested_display_precision: 0
+        icon: ewi:pressure-abs
+        device_class: "pressure"
+        state_class: "measurement"
+        value_template: >-
+          {% set ns = namespace(data={}) %}
+          {% for item in value | string | regex_findall('([^&=]+)=([^&]*)') %}
+            {% set ns.data = ns.data | combine({item[0]: item[1]}) %}
+          {% endfor %}
+          {{ (ns.data.baromabsin | default(0.0) | float * 33.86389) | round(2) }}
+        device:
+          identifiers: "ecowitt_gateway2"
+
+
+
+
+
+#---CALCULATED
+      # Dew Point (Indoor)
+      - name: "Indoor Dew Point"
+        unique_id: "ecowittpws_gw2_indoor_dew_point"
+        state_topic: "ecowitt/devices"
+        unit_of_measurement: "°C"
+        suggested_display_precision: 1
+        icon: ewi:dewpoint
+        device_class: "temperature"
+        state_class: "measurement"
+        value_template: >-
+          {% set ns = namespace(data={}) %}
+          {% for item in value | string | regex_findall('([^&=]+)=([^&]*)') %}
+            {% set ns.data = ns.data | combine({item[0]: item[1]}) %}
+          {% endfor %}
+    
+          {% set temp_f = ns.data.tempinf | default(0.0) | float %}
+          {% set humidity_in = ns.data.humidityin | default(0) | int %}
+    
+          {# Convert Fahrenheit to Celsius for dew point calculation #}
+          {% set temp_c = ((temp_f - 32) * 5 / 9) %}
+    
+          {# Constants for Magnus formula approximation #}
+          {% set A = 17.27 %}
+          {% set B = 237.7 %}
+    
+          {# Calculate gamma #}
+          {% set gamma = (A * temp_c) / (B + temp_c) + log(humidity_in / 100) %}
+    
+          {# Calculate dew point #}
+          {% set dew_point_c = (B * gamma) / (A - gamma) %}
+    
+          {{ dew_point_c | round(2) }}
+        device:
+          identifiers: "ecowitt_gateway2"
+
+
+
+
+
